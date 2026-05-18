@@ -16,7 +16,7 @@
     }
     
     .util-tech {
-        @apply tw-text-2xs tw-text-white tw-bg-black tw-rounded-md tw-px-1.5 tw-py-1;
+        @apply tw-text-2xs tw-text-gray-500 tw-border tw-border-gray-500 tw-rounded-md tw-px-1.5 tw-py-[3px];
     }
     
     .util-timeline {
@@ -33,5 +33,25 @@
     
     .util-timeline-inactive::after {
         @apply tw-border-gray-400;
+    }
+    
+    .util-skill-dots {
+        @apply tw-flex tw-gap-[3px] tw-items-center;
+    }
+    
+    .util-skill-dot {
+        @apply tw-flex tw-size-1.5 tw-rounded-full tw-bg-gray-200;
+    }
+    
+    .util-skill-dots-high .util-skill-dot {
+        @apply tw-bg-purple-400;
+    }
+    
+    .util-skill-dots-medium .util-skill-dot:nth-last-child(n+2) {
+        @apply tw-bg-emerald-400;
+    }
+    
+    .util-skill-dots-low .util-skill-dot:nth-child(1) {
+        @apply tw-bg-orange-300;
     }
 }
