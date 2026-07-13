@@ -17,6 +17,7 @@ module.exports = {
 				'brand-tailwind': '#00BCFF',
 				'brand-java': '#007396',
 				'brand-android': '#32DE84',
+				'brand-claude': '#D97757',
 				'link': '#00A6F4'
 			},
 			fontSize: {

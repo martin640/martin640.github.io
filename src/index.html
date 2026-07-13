@@ -106,6 +106,19 @@
                         <div class="tw-relative tw-h-1 tw-mt-2 tw-bg-neutral-100 tw-rounded-full"><div class="placeholder-bar tw-bg-blue-400 tw-rounded-full tw-h-full tw-absolute tw-top-0" style="width: 0%; left: 0"></div></div>
                     </div>
                 </template>
+                <div id="ai_split_block" hidden>
+                    <h2 class="tw-uppercase tw-mt-8 tw-mb-4 tw-text-gray-400 tw-text-xs tw-font-semibold tw-tracking-widest">AI-assisted vs hands-on · Last 7 days</h2>
+                    <div class="tw-text-xs">
+                        <div class="tw-flex tw-items-center tw-gap-2 tw-justify-between">
+                            <span class="placeholder-ai-label"></span>
+                            <span class="placeholder-human-label tw-text-gray-500"></span>
+                        </div>
+                        <div class="tw-flex tw-h-1 tw-mt-2 tw-overflow-hidden tw-bg-neutral-100 tw-rounded-full">
+                            <div class="placeholder-ai-bar tw-h-full tw-bg-brand-claude" style="width: 0%"></div>
+                            <div class="placeholder-human-bar tw-h-full tw-bg-gray-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
             </section>
             <section class="tw-py-10 tw-border-b tw-border-b-gray-200">
                 <div class="tw-flex tw-flex-col tw-gap-2 tw-mb-6 md:tw-flex-row md:tw-items-center md:tw-justify-between">
@@ -433,27 +446,55 @@
             </footer>
         </main>
         <script>
-            const getWakaTimeActivity = async () => {
-                const x = localStorage.getItem('martin64_wakatime_activity_by_lang')
-                const cached = x ? JSON.parse(x) : false
-                
+            // WakaTime "Language" JSON embed - powers the language bars above.
+            const WAKATIME_LANG_SHARE = 'https://wakatime.com/share/@81109637-a396-4606-b0a0-0f268d7ccf3d/f6a6e09e-52c4-4279-96cb-18d5e54bf08c.json'
+            // WakaTime "Category" JSON embed - powers the AI-assisted vs hands-on split.
+            // Create one at https://wakatime.com/share (chart: Categories, format: JSON) and paste its .json url here.
+            // Leave empty to keep that block hidden. Per-language AI split isn't available via public embeds - it needs the authenticated API.
+            const WAKATIME_CATEGORY_SHARE = 'https://wakatime.com/share/@81109637-a396-4606-b0a0-0f268d7ccf3d/b352cca1-36f0-4433-bc28-a798e77d8fda.json'
+
+            const fetchWakaShare = async (url, cacheKey) => {
+                const raw = localStorage.getItem(cacheKey)
+                const cached = raw ? JSON.parse(raw) : false
+
                 if (cached && ((Date.now() - cached.timestamp) < 3600000)) {
                     return cached
                 } else {
-                    return fetch('https://wakatime.com/share/@81109637-a396-4606-b0a0-0f268d7ccf3d/f6a6e09e-52c4-4279-96cb-18d5e54bf08c.json')
+                    return fetch(url)
                         .then(x => x.json())
                         .then(x => {
                             x.timestamp = Date.now()
-                            localStorage.setItem('martin64_wakatime_activity_by_lang', JSON.stringify(x))
+                            localStorage.setItem(cacheKey, JSON.stringify(x))
                             return x
                         })
                 }
             }
-            
+
+            const renderAiSplit = (x) => {
+                const block = document.getElementById('ai_split_block')
+                const total = x.data.reduce((sum, d) => sum + d.total_seconds, 0)
+                const ai = x.data.find(d => /\bai\b/i.test(d.name))
+                if (!total || !ai || ai.total_seconds <= 0) return
+
+                const aiPct = (ai.total_seconds / total) * 100
+                const humanPct = 100 - aiPct
+                block.getElementsByClassName('placeholder-ai-bar')[0].style.width = `${aiPct.toFixed(1)}%`
+                block.getElementsByClassName('placeholder-human-bar')[0].style.width = `${humanPct.toFixed(1)}%`
+                block.getElementsByClassName('placeholder-ai-label')[0].innerText = `AI-assisted · ${aiPct.toFixed(0)}%`
+                block.getElementsByClassName('placeholder-human-label')[0].innerText = `Hands-on · ${humanPct.toFixed(0)}%`
+                block.hidden = false
+            }
+
             window.addEventListener('load', () => {
                 document.title = '><(((º>' // OwO
-                
-                getWakaTimeActivity()
+
+                if (WAKATIME_CATEGORY_SHARE) {
+                    fetchWakaShare(WAKATIME_CATEGORY_SHARE, 'martin64_wakatime_activity_by_category')
+                        .then(renderAiSplit)
+                        .catch(console.warn)
+                }
+
+                fetchWakaShare(WAKATIME_LANG_SHARE, 'martin64_wakatime_activity_by_lang')
                     .then(x => {
                         const rowTemplate = document.getElementById('template_activity_table_row')
                         const table = document.getElementById('activity_table')
